@@ -13,6 +13,10 @@ class Message:
     files: list[tuple[str, bytes]]
     max_source_chat: int
 
+    def __post_init__(self):
+        if self.text:
+            self.text = f"{self.text}\n__forwarded from MAX__"
+
 
 def _all_tg_chats_for_max_source(source: int) -> Iterable[int]:
     for collector in config.collectors:
