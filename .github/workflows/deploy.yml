@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH Remote Action
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{secrets.HOST}}
+          username: ${{secrets.USERNAME}}
+          password: ${{secrets.PASSWORD}}
+          port: 22001
+          script: |
+            rm -rf maxtgfwd > /dev/null || echo > /dev/null
+            git clone https://github.com/Tapeline/maxtgfwd.git
+            cd maxtgfwd
+            uv sync
+            MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} uv run python -m maxtgfwd
