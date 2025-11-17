@@ -20,4 +20,4 @@ jobs:
             git clone https://github.com/Tapeline/maxtgfwd.git
             cd maxtgfwd
             uv sync
-            MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} uv run python -m maxtgfwd
+            MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} uv run python -m maxtgfwd &
