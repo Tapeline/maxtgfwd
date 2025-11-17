@@ -122,4 +122,4 @@ async def start_max():
         except:
             print("Couldn't login by token")
     await max_client.set_callback(packet_callback)
-    await asyncio.Future()
+    #await asyncio.Future()
