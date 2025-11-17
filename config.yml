@@ -1,0 +1,4 @@
+owner_handle: tapeline_tg
+collectors:
+  - sources: [-69107979591720]
+    sinks: [-5037111889]

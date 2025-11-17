@@ -1,0 +1,15 @@
+[project]
+name = "maxtgfwd"
+version = "0.1.0"
+description = "Forward MAX messages to Telegram"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.22.0",
+    "fuente",
+    "pyyaml>=6.0.3",
+    "vkmax",
+]
+
+[tool.uv.sources]
+vkmax = { git = "https://github.com/nsdkinx/vkmax" }
+fuente = { git = "https://github.com/Tishka17/fuente" }
