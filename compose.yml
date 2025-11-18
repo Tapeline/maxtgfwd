@@ -1,6 +1,9 @@
 services:
   maxtgfwd:
-    build: .
+    image: ghcr.io/tapeline/maxtgfwd:latest
+    environment:
+      MAXTGFWD_TG_TOKEN: ${MAXTGFWD_TG_TOKEN}
+      MAXTGFWD_AUTH_PHONE_NUMBER: ${MAXTGFWD_AUTH_PHONE_NUMBER}
     configs:
       - source: botcfg
         target: /app/config.yml
