@@ -101,6 +101,7 @@ async def complete_auth(message: TgMessage):
         await message.reply("Send an SMS code first.")
         return
     try:
+        await max_client._stop_keepalive_task()
         account_data = await max_client.sign_in(
             current_login_token,
             int(message.text.split()[-1])
