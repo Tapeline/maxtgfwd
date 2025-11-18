@@ -1,6 +1,7 @@
 services:
   maxtgfwd:
-    image: ghcr.io/tapeline/maxtgfwd:latest
+    build: .
+    #image: ghcr.io/tapeline/maxtgfwd:latest
     configs:
       - source: botcfg
         target: /app/config.yml
