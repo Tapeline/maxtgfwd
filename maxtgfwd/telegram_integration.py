@@ -111,7 +111,10 @@ async def complete_auth(message: TgMessage):
         login_token = account_data['payload']['tokenAttrs']['LOGIN']['token']
         session_file.write_text(f'{max_client.device_id}\n{login_token}')
         await max_client.disconnect()
-        await start_max()
+        await max_client._stop_keepalive_task()
+        await max_client.connect()
+        await message.reply("Restarted max")
+        await max_client.login_by_token(login_token, max_client.device_id)
         current_login_token = None
         await message.reply("Logged in.")
 
