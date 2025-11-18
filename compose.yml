@@ -9,6 +9,7 @@ services:
       - ../.maxsession:/app/.maxsession
     networks:
       - main_network
+    restart: always
 
 
 networks:
