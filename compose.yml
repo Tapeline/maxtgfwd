@@ -1,0 +1,18 @@
+services:
+  maxtgfwd:
+    build: .
+    configs:
+      - source: botcfg
+        target: /app/config.yml
+    networks:
+      - main_network
+
+
+networks:
+  main_network:
+    driver: bridge
+
+
+configs:
+  botcfg:
+    file: ./config.yml
