@@ -92,7 +92,7 @@ async def send_code(message: TgMessage):
 
 @dp.message(Command("sms"))
 async def complete_auth(message: TgMessage):
-    from maxtgfwd.max_integration import max_client
+    from maxtgfwd.max_integration import max_client, start_max
     global current_login_token
     if message.chat.username != config.owner_handle:
         await message.reply("You don't have permission to do that.")
@@ -110,6 +110,8 @@ async def complete_auth(message: TgMessage):
     else:
         login_token = account_data['payload']['tokenAttrs']['LOGIN']['token']
         session_file.write_text(f'{max_client.device_id}\n{login_token}')
+        await max_client.disconnect()
+        await start_max()
         current_login_token = None
         await message.reply("Logged in.")
 
