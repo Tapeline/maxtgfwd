@@ -16,8 +16,12 @@ jobs:
           password: ${{secrets.PASSWORD}}
           port: 22001
           script: |
-            rm -rf maxtgfwd > /dev/null || echo > /dev/null
-            git clone https://github.com/Tapeline/maxtgfwd.git
+            git clone https://github.com/Tapeline/maxtgfwd.git > /dev/null || echo > /dev/null
             cd maxtgfwd
-            uv sync
-            MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} uv run python -m maxtgfwd &
+            MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} docker compose up -d
+          #script: |
+          #  rm -rf maxtgfwd > /dev/null || echo > /dev/null
+          #  git clone https://github.com/Tapeline/maxtgfwd.git
+          #  cd maxtgfwd
+          #  uv sync
+          #  MAXTGFWD_TG_TOKEN=${{secrets.BOT_TOKEN}} MAXTGFWD_AUTH_PHONE_NUMBER=${{secrets.PHONE}} uv run python -m maxtgfwd &
