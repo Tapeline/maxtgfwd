@@ -5,6 +5,8 @@ services:
     configs:
       - source: botcfg
         target: /app/config.yml
+    volumes:
+      - ../.maxsession:/app/.maxsession
     networks:
       - main_network
 
