@@ -1,17 +1,19 @@
 import asyncio
-from pathlib import Path
+import logging
 from typing import Any, Final
 
 import aiohttp
 from vkmax.client import MaxClient
 from vkmax.functions.uploads import download_file, download_video
 
-from maxtgfwd.config import session_file
+from maxtgfwd.config import get_config
+from maxtgfwd.max_client import BetterMaxClient
 from maxtgfwd.message import Message, forward_to_all_telegram
 
 _OP_RECEIVE_MESSAGE: Final = {64, 128}
 
-max_client = MaxClient()
+logger = logging.getLogger(__name__)
+max_client = BetterMaxClient()
 
 
 async def packet_callback(
@@ -19,6 +21,7 @@ async def packet_callback(
     packet: dict[str, Any]
 ) -> None:
     if packet["opcode"] in _OP_RECEIVE_MESSAGE:
+        logger.info("Got a message, opcode %d", packet["opcode"])
         text = packet["payload"]["message"]["text"]
         attachments = packet["payload"]["message"]["attaches"]
         photos = await _get_photos(attachments)
@@ -50,6 +53,7 @@ async def _get_files(
     message_id: str,
     attachments
 ) -> list[tuple[str, bytes]]:
+    logger.info("Retrieving files")
     files = []
     for attachment in filter(
         lambda attachment: attachment["_type"] == "FILE", attachments
@@ -72,6 +76,7 @@ async def _get_files(
 async def _get_photos(
     attachments,
 ) -> list[bytes]:
+    logger.info("Retrieving photos")
     files = []
     for attachment in filter(
         lambda attachment: attachment["_type"] == "PHOTO", attachments
@@ -91,6 +96,7 @@ async def _get_videos(
     attachments,
 ) -> list[bytes]:
     files = []
+    logger.info("Retrieving videos")
     for attachment in filter(
         lambda attachment: attachment["_type"] == "VIDEO", attachments
     ):
@@ -110,16 +116,39 @@ async def _get_videos(
     return files
 
 
+_running_hc_task = None
+
+
+async def healthcheck_task():
+    logger.info("Periodic healthcheck started")
+    try:
+        while True:
+            is_alive = await max_client.is_alive()
+            if not is_alive:
+                logger.error("Max connection found dead, restarting")
+                await restart_max()
+            await asyncio.sleep(config.healthcheck_period_s)
+    except asyncio.CancelledError:
+        logger.info("Periodic healthcheck task stopped")
+        return
+
+
 async def start_max():
+    global _running_hc_task
+    logger.info("Starting Max")
     await max_client.connect()
-    if not session_file.exists():
-        print("You need to login!")
-    else:
-        contents = session_file.read_text()
-        device_id, login_token = contents.split('\n', maxsplit=1)
-        try:
-            await max_client.login_by_token(login_token, device_id)
-        except:
-            print("Couldn't login by token")
+    logger.info("Connected")
+    await max_client.login_by_token(
+        get_config().auth.token, get_config().auth.device
+    )
+    _running_hc_task = asyncio.create_task(healthcheck_task())
+    logger.info("Up and running")
     await max_client.set_callback(packet_callback)
-    #await asyncio.Future()
+
+
+async def restart_max():
+    await max_client.reconnect()
+    await max_client.login_by_token(
+        get_config().auth.token, get_config().auth.device
+    )
+    logger.info("Restarted")

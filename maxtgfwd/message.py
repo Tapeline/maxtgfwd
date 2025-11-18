@@ -1,8 +1,11 @@
 import asyncio
+import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from maxtgfwd.config import config
+from maxtgfwd.config import get_config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -19,14 +22,15 @@ class Message:
 
 
 def _all_tg_chats_for_max_source(source: int) -> Iterable[int]:
-    for collector in config.collectors:
+    for collector in get_config().collectors:
         if source in collector.sources:
             yield from collector.sinks
 
 
 async def forward_to_all_telegram(message: Message) -> None:
     from maxtgfwd.telegram_integration import forward_to_telegram
+    sinks = _all_tg_chats_for_max_source(message.max_source_chat)
+    logger.info("Forwarding to sinks %s", str(sinks))
     await asyncio.gather(*(
-        forward_to_telegram(message, chat)
-        for chat in _all_tg_chats_for_max_source(message.max_source_chat)
+        forward_to_telegram(message, chat) for chat in sinks
     ))

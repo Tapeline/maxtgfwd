@@ -13,13 +13,10 @@ from aiogram.types import (
     Message as TgMessage
 )
 
-from maxtgfwd.config import config, session_file
+from maxtgfwd.config import get_config
 from maxtgfwd.message import Message
 
-bot = Bot(
-    token=config.tg_token,
-    default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
-)
+bot: Bot | None = None
 dp = Dispatcher()
 current_login_token = None
 
@@ -83,10 +80,10 @@ async def forward_to_telegram(message: Message, chat_id: int) -> None:
 async def send_code(message: TgMessage):
     from maxtgfwd.max_integration import max_client
     global current_login_token
-    if message.chat.username != config.owner_handle:
+    if message.chat.username != get_config().owner_handle:
         await message.reply("You don't have permission to do that.")
         return
-    current_login_token = await max_client.send_code(config.auth_phone_number)
+    current_login_token = await max_client.send_code(get_config().auth_phone_number)
     await message.reply("SMS code sent.")
 
 
@@ -94,7 +91,7 @@ async def send_code(message: TgMessage):
 async def complete_auth(message: TgMessage):
     from maxtgfwd.max_integration import max_client
     global current_login_token
-    if message.chat.username != config.owner_handle:
+    if message.chat.username != get_config().owner_handle:
         await message.reply("You don't have permission to do that.")
         return
     if not current_login_token:
@@ -110,7 +107,7 @@ async def complete_auth(message: TgMessage):
         await message.reply(str(exc))
     else:
         login_token = account_data['payload']['tokenAttrs']['LOGIN']['token']
-        session_file.write_text(f'{max_client.device_id}\n{login_token}')
+        #session_file.write_text(f'{max_client.device_id}\n{login_token}')
         await max_client.disconnect()
         await max_client._stop_keepalive_task()
         await max_client.connect()
@@ -126,4 +123,9 @@ async def get_this_chat_id(message: TgMessage):
 
 
 async def start_telegram():
+    global bot
+    bot = Bot(
+        token=get_config().tg_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
+    )
     await dp.start_polling(bot)
