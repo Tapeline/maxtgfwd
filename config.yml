@@ -5,3 +5,4 @@ auth:
 collectors:
   - sources: [-69107979591720]
     sinks: [-5037111889]
+healthcheck_period_s: 5

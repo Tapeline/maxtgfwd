@@ -125,9 +125,10 @@ async def healthcheck_task():
         while True:
             is_alive = await max_client.is_alive()
             if not is_alive:
-                logger.error("Max connection found dead, restarting")
-                await restart_max()
-            await asyncio.sleep(config.healthcheck_period_s)
+                logger.error("Max connection found dead, quitting")
+                await stop_max()
+                exit(1)
+            await asyncio.sleep(get_config().healthcheck_period_s)
     except asyncio.CancelledError:
         logger.info("Periodic healthcheck task stopped")
         return
@@ -147,8 +148,16 @@ async def start_max():
 
 
 async def restart_max():
+    global _running_hc_task
+    if _running_hc_task:
+        _running_hc_task.cancel()
     await max_client.reconnect()
     await max_client.login_by_token(
         get_config().auth.token, get_config().auth.device
     )
+    _running_hc_task = asyncio.create_task(healthcheck_task())
     logger.info("Restarted")
+
+
+async def stop_max():
+    await max_client.disconnect()

@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Awaitable, Callable
 from typing import Any, AnyStr
 
-from vkmax.client import MaxClient, RPC_VERSION
+from vkmax.client import MaxClient, RPC_VERSION, _logger as vkmax_logger
 
 logger = logging.getLogger(__name__)
 
@@ -13,14 +13,17 @@ logger = logging.getLogger(__name__)
 class BetterMaxClient:
     def __init__(self) -> None:
         self.client = MaxClient()
+        vkmax_logger.setLevel(logging.WARNING)
 
     async def connect(self) -> None:
+        logger.info("Connecting")
         if self.client._connection:
             logger.warning("Tried to connect when already connected")
             return
         await self.client.connect()
 
     async def disconnect(self) -> None:
+        logger.info("Disconnecting")
         if not self.client._keepalive_task:
             logger.warning("Disconnecting with dead keepalive")
         else:
@@ -37,20 +40,47 @@ class BetterMaxClient:
     async def reconnect(self) -> None:
         await self.disconnect()
         await self.connect()
+        logger.info("Reconnected")
 
     async def is_alive(self, timeout_s: float = 3) -> bool:
+        logger.info("Ping.")
+        #ping_task = asyncio.create_task(self.client.invoke_method(
+        #    opcode=1,
+        #    payload={"interactive": True}
+        #))
+        seq = next(self.client._seq)
+        request = {
+            "ver": RPC_VERSION,
+            "cmd": 0,
+            "seq": seq,
+            "opcode": 1,
+            "payload": {"interactive": True}
+        }
+        future = asyncio.get_event_loop().create_future()
+        self.client._pending[seq] = future
+        send_task = asyncio.create_task(
+            self.client._connection.send(json.dumps(request))
+        )
         try:
-            response = await asyncio.wait_for(
-                self.client.invoke_method(
-                    opcode=1,
-                    payload={"interactive": True}
-                ),
+            await asyncio.wait_for(
+                send_task,
                 timeout=timeout_s
             )
-            return response.get("opcode") == 1
+            response = await asyncio.wait_for(
+                future,
+                timeout=timeout_s
+            )
         except TimeoutError:
+            #ping_task.cancel()
             logger.exception("Timeouted when pinging")
             return False
+        else:
+            is_alive = response.get("opcode") == 1
+            if is_alive:
+                logger.info("Pong.")
+            else:
+                logger.info("WS dead.")
+            return is_alive
 
     async def send_code(self, phone: str) -> str:
         return await self.client.send_code(phone)

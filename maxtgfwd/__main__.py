@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 
 import asyncio
 import pprint
