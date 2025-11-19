@@ -13,7 +13,9 @@ from maxtgfwd.telegram_integration import start_telegram
 
 async def main():
     load_config()
+    print(ns)
     logging.info("Config loaded: %s", pprint.pformat(get_config()))
+    return
     await asyncio.gather(*(
         start_max(),
         start_telegram()

@@ -1,10 +1,27 @@
 from argparse import ArgumentParser
 from dataclasses import dataclass
 
+from adaptix import Retort
 from fuente import config_loader
 from fuente.sources.argparse import ArgParseSource
 from fuente.sources.env import EnvSource
+from fuente.sources.flat import FlatSource, FlatSourceLoader
 from fuente.sources.yaml import YamlSource
+
+
+class NonPatchingArgSource(ArgParseSource):
+    def _make_loader(
+        self,
+        loading_retort: Retort,
+        dumping_retort: Retort,
+        config_type: type
+    ) -> FlatSourceLoader:
+        return FlatSource._make_loader(
+            self, loading_retort, dumping_retort, config_type
+        )
+
+    def _gen_key(self, prefix: str, path: list[str]):
+        return prefix + "__".join(x.lower() for x in path)
 
 
 arg_parser = ArgumentParser(prog="maxtgfwd")
@@ -19,13 +36,21 @@ arg_parser.add_argument(
     required=False
 )
 arg_parser.add_argument(
-    "--auth_token",
-    "--max-token",
+    "--tg-token",
+    "--tg_token",
+    default=None,
     required=False
 )
 arg_parser.add_argument(
-    "--auth_device",
+    "--auth__token",
+    "--max-token",
+    default=None,
+    required=False
+)
+arg_parser.add_argument(
+    "--auth__device",
     "--max-device",
+    default=None,
     required=False
 )
 
@@ -54,7 +79,7 @@ class Config:
 app_config_loader = config_loader(
     YamlSource("config.yml"),
     EnvSource(prefix="MAXTGFWD_", sep="__"),
-    ArgParseSource(parser=arg_parser),
+    NonPatchingArgSource(parser=arg_parser, sep="__"),
     config=Config,
 )
 

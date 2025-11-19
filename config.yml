@@ -1,7 +1,7 @@
 owner_handle: tapeline_tg
 auth:
-  device: ""
-  token: ""
+  device: "a"
+  token: "b"
 collectors:
   - sources: [-69107979591720]
     sinks: [-5037111889]
