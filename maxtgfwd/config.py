@@ -1,8 +1,11 @@
 from argparse import ArgumentParser
 from dataclasses import dataclass
 
-from adaptix import Retort
+from adaptix import P, Retort
 from fuente import config_loader
+from fuente.merger.base import Merger
+from fuente.merger.simple import UseFirst
+from fuente.merger_provider import merge
 from fuente.sources.argparse import ArgParseSource
 from fuente.sources.env import EnvSource
 from fuente.sources.flat import FlatSource, FlatSourceLoader
@@ -22,6 +25,11 @@ class NonPatchingArgSource(ArgParseSource):
 
     def _gen_key(self, prefix: str, path: list[str]):
         return prefix + "__".join(x.lower() for x in path)
+
+
+class UseLastNotNone[T](Merger):
+    def _merge(self, name: str, x: T, y: T) -> T:
+        return y or x
 
 
 arg_parser = ArgumentParser(prog="maxtgfwd")
@@ -81,6 +89,11 @@ app_config_loader = config_loader(
     EnvSource(prefix="MAXTGFWD_", sep="__"),
     NonPatchingArgSource(parser=arg_parser, sep="__"),
     config=Config,
+    recipe=[
+        merge(P[Config].tg_token, UseLastNotNone()),
+        merge(P[Config].auth.token, UseLastNotNone()),
+        merge(P[Config].auth.device, UseLastNotNone()),
+    ]
 )
 
 _config = None

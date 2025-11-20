@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import sys
 import warnings
 from collections.abc import Awaitable, Callable
 from typing import Any, AnyStr
@@ -42,12 +43,22 @@ class BetterMaxClient:
         await self.connect()
         logger.info("Reconnected")
 
+    async def require_alive(self, timeout_s: float = 3) -> None:
+        logger.info("Ping. Bomb armed")
+        bomb = asyncio.create_task(_bomb_the_app(timeout_s))
+        response = await self.client.invoke_method(
+            opcode=1,
+            payload={"interactive": True}
+        )
+        bomb.cancel()
+        is_alive = response.get("opcode") == 1
+        if not is_alive:
+            logger.error("WS dead, dying with it.")
+        else:
+            logger.info("Pong.")
+
     async def is_alive(self, timeout_s: float = 3) -> bool:
         logger.info("Ping.")
-        #ping_task = asyncio.create_task(self.client.invoke_method(
-        #    opcode=1,
-        #    payload={"interactive": True}
-        #))
         seq = next(self.client._seq)
         request = {
             "ver": RPC_VERSION,
@@ -105,3 +116,9 @@ class BetterMaxClient:
         [MaxClient, dict[str, Any]], Awaitable[None]
     ]) -> None:
         await self.client.set_callback(function)
+
+
+async def _bomb_the_app(timer_s: float) -> None:
+    await asyncio.sleep(timer_s)
+    logger.info("Kaboom.")
+    sys.exit(1)

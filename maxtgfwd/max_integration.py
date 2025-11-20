@@ -123,11 +123,12 @@ async def healthcheck_task():
     logger.info("Periodic healthcheck started")
     try:
         while True:
-            is_alive = await max_client.is_alive()
-            if not is_alive:
-                logger.error("Max connection found dead, quitting")
-                await stop_max()
-                exit(1)
+            await max_client.require_alive()
+            #is_alive = await max_client.is_alive()
+            #if not is_alive:
+            #    logger.error("Max connection found dead, quitting")
+            #    await stop_max()
+            #    exit(1)
             await asyncio.sleep(get_config().healthcheck_period_s)
     except asyncio.CancelledError:
         logger.info("Periodic healthcheck task stopped")
