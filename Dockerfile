@@ -22,4 +22,4 @@ FROM base AS sync_min
 RUN uv sync
 
 FROM sync_${build_variant} AS final
-CMD uv run python -m maxtgfwd
+CMD uv run python -m maxtgfwd run
